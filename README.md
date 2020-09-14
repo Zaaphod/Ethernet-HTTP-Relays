@@ -77,10 +77,10 @@ Functions:
 
 Variables:   // If you kow the device index you can use these variables
 ----------
-* Ethernet_Relay_Element.Count                      Byte      1
-* Ethernet_Relay_Element.Device[i].Address          String    '10.10.03.03'
-* Ethernet_Relay_Element.Device[i].Count            Byte      16
-* Ethernet_Relay_Element.Device[i].Status           Word      65535
-* Ethernet_Relay_Element.Device[i].Relay[j].State   Boolean   TRUE
-* Ethernet_Relay_Element.Device[i].Current_Page     Byte      4
+* Ethernet_Relay.Count                      Byte      1
+* Ethernet_Relay.Device[i].Address          String    '10.10.03.03'
+* Ethernet_Relay.Device[i].Count            Byte      16
+* Ethernet_Relay.Device[i].Status           Word      65535
+* Ethernet_Relay.Device[i].Relay[j].State   Boolean   TRUE
+* Ethernet_Relay.Device[i].Current_Page     Byte      4
 

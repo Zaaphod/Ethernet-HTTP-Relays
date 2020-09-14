@@ -44,19 +44,19 @@ Begin
    Ethernet_Relay_List;
 
    Writeln ('Variables:   (must know device index)');
-   Writeln('Ethernet_Relay_Element.Count                      ',Ethernet_Relay_Element.Count);
-   Writeln('Ethernet_Relay_Element.Device[1].Address          ',Ethernet_Relay_Element.Device[1].Address);
-   Writeln('Ethernet_Relay_Element.Device[1].Count            ',Ethernet_Relay_Element.Device[1].Count);
-   Writeln('Ethernet_Relay_Element.Device[1].Status           ',Ethernet_Relay_Element.Device[1].Status);
-   Writeln('Ethernet_Relay_Element.Device[1].Relay[1].State   ',Ethernet_Relay_Element.Device[1].Relay[1].State);
-   Writeln('Ethernet_Relay_Element.Device[1].Current_Page     ',Ethernet_Relay_Element.Device[1].Current_Page);
+   Writeln('Ethernet_Relay.Count                      ',Ethernet_Relay.Count);
+   Writeln('Ethernet_Relay.Device[1].Address          ',Ethernet_Relay.Device[1].Address);
+   Writeln('Ethernet_Relay.Device[1].Count            ',Ethernet_Relay.Device[1].Count);
+   Writeln('Ethernet_Relay.Device[1].Status           ',Ethernet_Relay.Device[1].Status);
+   Writeln('Ethernet_Relay.Device[1].Relay[1].State   ',Ethernet_Relay.Device[1].Relay[1].State);
+   Writeln('Ethernet_Relay.Device[1].Current_Page     ',Ethernet_Relay.Device[1].Current_Page);
    repeat
       readkey;
    until not(keypressed);
    Repeat
-      For I := 1 to Ethernet_Relay_Element.Device[1].Count Do
+      For I := 1 to Ethernet_Relay.Device[1].Count Do
          Begin
-            Write_Ethernet_Relay(Ethernet_Relay_Address,i,Not(Ethernet_Relay_Element.Device[1].Relay[i].State));
+            Write_Ethernet_Relay(Ethernet_Relay_Address,i,Not(Ethernet_Relay.Device[1].Relay[i].State));
             Sleep(100);
          End;
    Until Keypressed;
