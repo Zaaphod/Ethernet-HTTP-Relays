@@ -4,12 +4,12 @@ Unit Ethernet_Relays;
 
 Interface
 
-uses  fphttpclient, SSockets, Classes, SysUtils;
+uses  FPHttpClient, SSockets, Classes, SysUtils;
 
 Type
    Relaytype = Record
       State    : Boolean;
-   end;
+   End;
 
    ETH_RLY_Record = record
       Address          :String;
@@ -27,7 +27,7 @@ Type
 Var
    Ethernet_Relay: Eth_Relay_Manager;
 
-Function Ethernet_Relay_Device_Status(Device:String):Word;
+Function Ethernet_Relay_Device_Status(Device:String):Integer;
 Function Ethernet_Relay_Device_Status_String(Device:String):String;
 Function Ethernet_Relay_Device_Count(Device:String):Word;
 Function Ethernet_Relay_State(Device:String;Relay_Number:Byte):Boolean;
@@ -117,7 +117,7 @@ Begin
             Begin
                //Writeln('1');
                Stringtemp:=Stringtemp+'1';
-            end
+            End
          else
             Begin
                //Writeln('0');
@@ -162,35 +162,28 @@ Begin
       Begin
          rpos:=Pos('Relay-',Ethernet_Relay_String_List[i]);
          //Writeln(Copy(Ethernet_Relay_String_List[i],rpos+6,2));
-         RNP:=Strtoint(Copy(Ethernet_Relay_String_List[i],rpos+6,2));
-         //Writeln('rnp:',Copy(Ethernet_Relay_String_List[i],rpos+6,2),' ',RNP);
-         If RNP > 0 Then
+         If rpos > 0 then
             Begin
-               If (RNP>=1) And (RNP<=4) Then
-                  Ethernet_Relay.Device[Device_Number].Current_Page:=1
-               Else
-               If (RNP>=5) And (RNP<=8) Then
-                  Ethernet_Relay.Device[Device_Number].Current_Page:=2
-               Else
-               If (RNP>=9) And (RNP<=12) Then
-                  Ethernet_Relay.Device[Device_Number].Current_Page:=3
-               Else
-               If (RNP>=13) And (RNP<=16) Then
-                  Ethernet_Relay.Device[Device_Number].Current_Page:=4;
-               Relay_Number:=StrtoInt(Copy(Ethernet_Relay_String_List[i],rpos+6,2));
-               if (Pos('#00FF00',Ethernet_Relay_String_List[i])>0) Then
+               RNP:=Strtoint(Copy(Ethernet_Relay_String_List[i],rpos+6,2));
+               //Writeln('rnp:',Copy(Ethernet_Relay_String_List[i],rpos+6,2),' ',RNP);
+               If RNP > 0 Then
                   Begin
-                     Ethernet_Relay.Device[Device_Number].Relay[Relay_Number].state := True;
-                     Ethernet_Relay.Device[Device_Number].Status:=Ethernet_Relay.Device[Device_Number].Status OR ($1 shl (Relay_Number-1));
-                  End
-               else
-                  Begin
-                     Ethernet_Relay.Device[Device_Number].Relay[Relay_Number].state := False;
-                     Ethernet_Relay.Device[Device_Number].Status:= Ethernet_Relay.Device[Device_Number].Status and (($1 shl (Relay_Number-1)) xor High(QWord));
+                     Ethernet_Relay.Device[Device_Number].Current_Page:=(RNP+3) SHR 2;
+                     Relay_Number:=StrtoInt(Copy(Ethernet_Relay_String_List[i],rpos+6,2));
+                     if (Pos('#00FF00',Ethernet_Relay_String_List[i])>0) Then
+                        Begin
+                           Ethernet_Relay.Device[Device_Number].Relay[Relay_Number].state := True;
+                           Ethernet_Relay.Device[Device_Number].Status:=Ethernet_Relay.Device[Device_Number].Status OR ($1 shl (Relay_Number-1));
+                        End
+                     else
+                        Begin
+                           Ethernet_Relay.Device[Device_Number].Relay[Relay_Number].state := False;
+                           Ethernet_Relay.Device[Device_Number].Status:= Ethernet_Relay.Device[Device_Number].Status and (($1 shl (Relay_Number-1)) xor High(QWord));
+                        End;
+                     //Writeln ('Ethernet Relay #',Relay_Number,' ',Ethernet_Relay.Device[Relay_Number].status,'Page ',Ethernet_Relay.Device[Device_Number].Current_Page);
                   End;
-               //Writeln ('Ethernet Relay #',Relay_Number,' ',Ethernet_Relay.Device[Relay_Number].status,'Page ',Ethernet_Relay.Device[Device_Number].Current_Page);
             End;
-      end;
+      End;
    Ethernet_Relay_String_List.Free;
    Ethernet_Relay_Status_Page := Ethernet_Relay.Device[Device_Number].Current_Page;
 End;
@@ -200,7 +193,7 @@ Var
    C : TFPHTTPClient;
    Receive_String:AnsiString;
 
-begin
+Begin
    C:=TFPHTTPClient.Create(Nil);
    try
       try
@@ -216,40 +209,25 @@ begin
                Receive_String:='Error';
             End;
          On EH : EHTTPClient do
-            begin
+            Begin
                writeln(Send_String);
                Write(EH.ClassName);
                Writeln(' Error Finding Relay Board: '+EH.Message);
                Receive_String:='Error';
-            end;
+            End;
          on E: Exception do
-            begin
+            Begin
                writeln(Send_String);
                Write(E.ClassName);
                Writeln(' Error Connecting To Relay Board');
                Receive_String:='Error';
             End;
-
-
-      end;
+      End;
    finally
      C.Free;
-   end;
+   End;
    Send_HTTP:=Receive_String;
-
-//Try
-//   Receive_String:=TFPHTTPCLIENT.SIMPLEGET(Send_String);
-//   //writeln(Send_String,' ',Receive_String);
-//except
-//   On E: Exception do
-//       Begin
-//       Write(E.ClassName);
-//       Writeln(' Could not connect to server');
-//       Receive_String:='Error'
-//       end;
-//     end;
-//Send_HTTP:=Receive_String;
-end;
+End;
 {=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=}
 Function Ethernet_Relay_Send_Command(Device_Number:Byte;rc:Word):Boolean;
 Var
@@ -282,7 +260,7 @@ Begin
             Begin
                If Ethernet_Relay.Device[Device_Number].Current_Page*4 > Device_Count then
                   Device_Count:=Ethernet_Relay.Device[Device_Number].Current_Page*4;
-            end
+            End
          Else
             Begin
                Device_Count:=0;
@@ -293,135 +271,91 @@ Begin
    Get_Ethernet_Relay_DevicesCount:=Device_Count;
 End;
 {=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=}
-Function Ethernet_Relay_Device_Status(Device:String):Word;
+Function Ethernet_Relay_Device_Number(Device:String):Byte;
 Var
    Ethernet_Relay_j,Device_Number:Byte;
 Begin
-   Ethernet_Relay_Device_Status:=0 ;
    Device_Number:=0;
    for Ethernet_Relay_j := 1 to Ethernet_Relay.Count do
-      begin
-         if Ethernet_Relay.Device[Ethernet_Relay_j].Address=Device then
-            begin
-              Device_Number:=Ethernet_Relay_j;
-              break;
-            end;
-      end;
-   if Device_Number = 0 Then
-      begin
-         writeln('Error: Device not found ("',Device,'")');
-      end
-   Else
       Begin
-         Ethernet_Relay_Device_Status:=Ethernet_Relay.Device[Device_Number].Status;
+         if Ethernet_Relay.Device[Ethernet_Relay_j].Address=Device then
+            Begin
+               Device_Number:=Ethernet_Relay_j;
+               break;
+            End;
       End;
+   if Device_Number = 0 Then
+      Begin
+         writeln('Error: Device not found ("',Device,'")');
+      End;
+   Ethernet_Relay_Device_Number:=Device_Number;
+End;
+{=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=}
+Function Ethernet_Relay_Number_In_Range(Device_Number,Relay_Number:Byte):Boolean;
+Begin
+   If (Relay_Number>Ethernet_Relay.Device[Device_Number].Count) or (Relay_Number<1) then
+      Begin
+         writeln('Error: Relay number out of range ("',Relay_Number,'")  Must be between 1 and ',Ethernet_Relay.Device[Device_Number].Count);
+         Ethernet_Relay_Number_In_Range := False;
+      End
+   Else
+      Ethernet_Relay_Number_In_Range := True
+End;
+{=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=}
+Function Ethernet_Relay_Device_Status(Device:String):Integer;
+Var
+   Device_Number:Byte;
+Begin
+   Ethernet_Relay_Device_Status:=-1;
+   Device_Number:= Ethernet_Relay_Device_Number(Device);
+   If Device_Number > 0 Then
+      Ethernet_Relay_Device_Status:=Ethernet_Relay.Device[Device_Number].Status
 End;
 {=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=}
 Function Ethernet_Relay_Device_Status_String(Device:String):String;
 Var
-   Ethernet_Relay_j,Device_Number:Byte;
+   Device_Number:Byte;
 Begin
    Ethernet_Relay_Device_Status_String:='';
-   Device_Number:=0;
-   for Ethernet_Relay_j := 1 to Ethernet_Relay.Count do
-      begin
-         if Ethernet_Relay.Device[Ethernet_Relay_j].Address=Device then
-            begin
-              Device_Number:=Ethernet_Relay_j;
-              break;
-            end;
-      end;
-   if Device_Number = 0 Then
-      begin
-         writeln('Error: Device not found ("',Device,'")');
-      end
-   Else
-      Begin
-         Ethernet_Relay_Device_Status_String := BinStringCustom(Ethernet_Relay.Device[Device_Number].Status,Ethernet_Relay.Device[Device_Number].Count);
-      End;
+   Device_Number:= Ethernet_Relay_Device_Number(Device);
+   If Device_Number > 0 Then
+      Ethernet_Relay_Device_Status_String := BinStringCustom(Ethernet_Relay.Device[Device_Number].Status,Ethernet_Relay.Device[Device_Number].Count);
 End;
-
+{=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=}
 Function Ethernet_Relay_Device_Count(Device:String):Word;
 Var
-   Ethernet_Relay_j,Device_Number:Byte;
+   Device_Number:Byte;
 Begin
    Ethernet_Relay_Device_Count:=0 ;
    Device_Number:=0;
-   for Ethernet_Relay_j := 1 to Ethernet_Relay.Count do
-      begin
-         if Ethernet_Relay.Device[Ethernet_Relay_j].Address=Device then
-            begin
-              Device_Number:=Ethernet_Relay_j;
-              break;
-            end;
-      end;
-   if Device_Number = 0 Then
-      begin
-         writeln('Error: Device not found ("',Device,'")');
-      end
-   Else
-      Begin
-         Ethernet_Relay_Device_Count:=Ethernet_Relay.Device[Device_Number].Count;
-      End;
+   Device_Number:= Ethernet_Relay_Device_Number(Device);
+   If Device_Number > 0 Then
+      Ethernet_Relay_Device_Count:=Ethernet_Relay.Device[Device_Number].Count;
 End;
 {=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=}
 Function Ethernet_Relay_State(Device:String;Relay_Number:Byte):Boolean;
 Var
-   Ethernet_Relay_j,Device_Number:Byte;
+   Device_Number:Byte;
 Begin
    Device_Number:=0;
-   for Ethernet_Relay_j := 1 to Ethernet_Relay.Count do
-      begin
-         if Ethernet_Relay.Device[Ethernet_Relay_j].Address=Device then
-            begin
-              Device_Number:=Ethernet_Relay_j;
-              break;
-            end;
-      end;
-   if Device_Number = 0 Then
-      begin
-         writeln('Error: Device not found ("',Device,'")');
-      end
-   Else
-    if (Relay_Number>Ethernet_Relay.Device[Device_Number].Count) or (Relay_Number<1) then
-      begin
-         writeln('Error: Relay number out of range ("',Relay_Number,'")  Must be between 1 and ',Ethernet_Relay.Device[Device_Number].Count);
-      End
-   Else
-      Begin
-         Ethernet_Relay_State:=Ethernet_Relay.Device[Device_Number].Relay[Relay_Number].State;
-      End;
+   Device_Number:= Ethernet_Relay_Device_Number(Device);
+   If (Device_Number > 0)And (Ethernet_Relay_Number_In_Range(Device_Number,Relay_Number)) Then
+      Ethernet_Relay_State:=Ethernet_Relay.Device[Device_Number].Relay[Relay_Number].State;
 End;
 {=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=}
 Function Read_Ethernet_Relay(Device:String;Relay_Number:Byte):Byte;
 Var
-   Ethernet_Relay_j,Device_Number:Byte;
+   Device_Number:Byte;
 Begin
    Device_Number:=0;
-   for Ethernet_Relay_j := 1 to Ethernet_Relay.Count do
-      begin
-         if Ethernet_Relay.Device[Ethernet_Relay_j].Address=Device then
-            begin
-              Device_Number:=Ethernet_Relay_j;
-              break;
-            end;
-      end;
-   if Device_Number = 0 Then
-      begin
-         writeln('Error: Device not found ("',Device,'")');
-      end
-   Else
-    if (Relay_Number>Ethernet_Relay.Device[Device_Number].Count) or (Relay_Number<1) then
-      begin
-         writeln('Error: Relay number out of range ("',Relay_Number,'")  Must be between 1 and ',Ethernet_Relay.Device[Device_Number].Count);
-      End
-   Else
-      Begin
-         If Ethernet_Relay.Device[Device_Number].Relay[Relay_Number].State Then
-            Read_Ethernet_Relay:=1
-         Else
-            Read_Ethernet_Relay:=0;
-      End;
+   Device_Number:= Ethernet_Relay_Device_Number(Device);
+   If (Device_Number > 0) And (Ethernet_Relay_Number_In_Range(Device_Number,Relay_Number)) Then
+   Begin
+      If Ethernet_Relay.Device[Device_Number].Relay[Relay_Number].State Then
+         Read_Ethernet_Relay:=1
+      Else
+         Read_Ethernet_Relay:=0;
+   End;
 End;
 {=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=}
 Function Clear_All_Ethernet_Relays:integer;
@@ -432,16 +366,16 @@ Begin
       Begin
          For Device_Number := 1 to Ethernet_Relay.Count do
             Begin
-               Ethernet_Relay_Send_Command(Device_Number,44);
-               Get_Ethernet_Relay_DevicesCount(Device_Number); // reads in all states
+                Ethernet_Relay_Send_Command(Device_Number,44);
+                Get_Ethernet_Relay_DevicesCount(Device_Number); // reads in all states
             End;
          Clear_All_Ethernet_Relays:= 1;
       End
    Else
-      begin
+      Begin
          writeln('Error: Device not found');
          Clear_All_Ethernet_Relays := 2;
-      end
+      End
 End;
 {=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=}
 Function Set_All_Ethernet_Relays:integer;
@@ -452,37 +386,25 @@ Begin
       Begin
          For Device_Number := 1 to Ethernet_Relay.Count do
             Begin
-               Ethernet_Relay_Send_Command(Device_Number,45);
-               Get_Ethernet_Relay_DevicesCount(Device_Number); // reads in all states
+                Ethernet_Relay_Send_Command(Device_Number,45);
+                Get_Ethernet_Relay_DevicesCount(Device_Number); // reads in all states
             End;
          Set_All_Ethernet_Relays:= 1;
       End
    Else
-      begin
+      Begin
          writeln('Error: Device not found');
          Set_All_Ethernet_Relays := 2;
-      end;
+      End;
 End;
 {=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=}
 Function Clear_Ethernet_Relays(Device:String):integer;
 Var
-   Ethernet_Relay_j,Device_Number:Byte;
+   Device_Number:Byte;
 Begin
    Device_Number:=0;
-   for Ethernet_Relay_j := 1 to Ethernet_Relay.Count do
-      begin
-         if Ethernet_Relay.Device[Ethernet_Relay_j].Address=Device then
-            begin
-              Device_Number:=Ethernet_Relay_j;
-              break;
-            end;
-      end;
-   if Device_Number = 0 Then
-      begin
-         writeln('Error: Device not found ("',Device,'")');
-         Clear_Ethernet_Relays := 2;
-      end
-   Else
+   Device_Number:= Ethernet_Relay_Device_Number(Device);
+   If (Device_Number > 0) Then
       Begin
          Ethernet_Relay_Send_Command(Device_Number,44);
          Get_Ethernet_Relay_DevicesCount(Device_Number); // reads in all states
@@ -492,23 +414,11 @@ End;
 {=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=}
 Function Set_Ethernet_Relays(Device:String):integer;
 Var
-   Ethernet_Relay_j,Device_Number:Byte;
+   Device_Number:Byte;
 Begin
    Device_Number:=0;
-   for Ethernet_Relay_j := 1 to Ethernet_Relay.Count do
-      begin
-         if Ethernet_Relay.Device[Ethernet_Relay_j].Address=Device then
-            begin
-              Device_Number:=Ethernet_Relay_j;
-              break;
-            end;
-      end;
-   if Device_Number = 0 Then
-      begin
-         writeln('Error: Device not found ("',Device,'")');
-         Set_Ethernet_Relays := 2;
-      end
-   Else
+   Device_Number:= Ethernet_Relay_Device_Number(Device);
+   If (Device_Number > 0) Then
       Begin
          Ethernet_Relay_Send_Command(Device_Number,45);
          Get_Ethernet_Relay_DevicesCount(Device_Number); // reads in all states
@@ -519,41 +429,22 @@ End;
 Function Write_Ethernet_Relay(Device:String;Relay_Number:Byte;State:Boolean):integer;
 Var
    Needed_Page,Relay_Code,
-   Ethernet_Relay_j,Device_Number:Byte;
+   Device_Number:Byte;
 Begin
    Device_Number:=0;
-   for Ethernet_Relay_j := 1 to Ethernet_Relay.Count do
-      begin
-         if Ethernet_Relay.Device[Ethernet_Relay_j].Address=Device then
-            begin
-              Device_Number:=Ethernet_Relay_j;
-              break;
-            end;
-      end;
+   Device_Number:= Ethernet_Relay_Device_Number(Device);
    if Device_Number = 0 Then
-      begin
-         writeln('Error: Device not found ("',Device,'")');
+      Begin
          Write_Ethernet_Relay := 2;
-      end
+      End
    Else
-   if (Relay_Number>Ethernet_Relay.Device[Device_Number].Count) or (Relay_Number<1) then
-      begin
-         writeln('Error: Relay number out of range ("',Relay_Number,'")  Must be between 1 and ',Ethernet_Relay.Device[Device_Number].Count);
+   If Not(Ethernet_Relay_Number_In_Range(Device_Number,Relay_Number)) Then
+      Begin
          Write_Ethernet_Relay := 3;
       End
    Else
       Begin
-         If (Relay_Number>=1) And (Relay_Number<=4) Then
-            Needed_Page:=1
-         Else
-         If (Relay_Number>=5) And (Relay_Number<=8) Then
-            Needed_Page:=2
-         Else
-         If (Relay_Number>=9) And (Relay_Number<=12) Then
-            Needed_Page:=3
-         Else
-         If (Relay_Number>=13) And (Relay_Number<=16) Then
-            Needed_Page:=4;
+         Needed_Page:= (Relay_Number+3) SHR 2;
          If Ethernet_Relay.Device[Device_Number].Current_Page <> Needed_Page Then
          Begin
             Repeat
@@ -582,39 +473,34 @@ Var
 Begin
    If Upcase(Device) = 'ALL' Then
       Begin
-         For Ethernet_Relay_i := 1 to Ethernet_Relay.Count Do
+         If Ethernet_Relay.Count > 0 Then
             Begin
-               Writeln_Relay_Device(Ethernet_Relay_i);
-               //For Ethernet_Relay_j := 1 to Ethernet_Relay.Device[Ethernet_Relay_i].Count Do
-               //   Writeln ('    ',Ethernet_Relay_j,' ',Ethernet_Relay.Device[Ethernet_Relay_i].Relay[Ethernet_Relay_j].State);
-            End;
-         Write (Ethernet_Relay.Count,' Device');
-         If Ethernet_Relay.Count <> 1 then
-            Writeln ('s')
+               For Ethernet_Relay_i := 1 to Ethernet_Relay.Count Do
+                  Begin
+                     Writeln_Relay_Device(Ethernet_Relay_i);
+                     //For Ethernet_Relay_j := 1 to Ethernet_Relay.Device[Ethernet_Relay_i].Count Do
+                     //   Writeln ('    ',Ethernet_Relay_j,' ',Ethernet_Relay.Device[Ethernet_Relay_i].Relay[Ethernet_Relay_j].State);
+                  End;
+               Write (Ethernet_Relay.Count,' Device');
+               If Ethernet_Relay.Count <> 1 then
+                  Writeln ('s')
+               Else
+                  Writeln;
+            End
          Else
-            Writeln;
+            Writeln('No Devices Added');
       End
    Else
       Begin
          Device_Number:=0;
-         for Ethernet_Relay_i := 1 to Ethernet_Relay.Count do
-            begin
-               if Ethernet_Relay.Device[Ethernet_Relay_i].Address=Device then
-                  begin
-                  Device_Number:=Ethernet_Relay_i;
-                  break;
-                  end;
-            end;
+         Device_Number:= Ethernet_Relay_Device_Number(Device);
          if Device_Number = 0 Then
-            begin
-               writeln('Error: Device not found ("',Device,'")');
+            Begin
                Ethernet_Relay_Status := 2;
-            end
+            End
          Else
             Begin
                Writeln_Relay_Device(Device_Number);
-               //For Ethernet_Relay_j := 1 to Ethernet_Relay.Device[Device_Number].Count Do
-               //   Writeln ('    ',Ethernet_Relay_j,' ',Ethernet_Relay.Device[Device_Number].Relay[Ethernet_Relay_j].State);
             End;
       End;
 End;
@@ -632,13 +518,13 @@ Begin
    If Ethernet_Relay.Count >= 1 Then
       Begin
          for Ethernet_Relay_i := 1 to Ethernet_Relay.Count do
-            begin
+            Begin
                if Ethernet_Relay.Device[Ethernet_Relay_i].Address=Address then
-                  begin
-                  Device_Number:=Ethernet_Relay_i;
-                  break;
-                  end;
-            end;
+                  Begin
+                     Device_Number:=Ethernet_Relay_i;
+                     break;
+                  End;
+            End;
       End;
    if Device_Number = 0 Then
       Begin
